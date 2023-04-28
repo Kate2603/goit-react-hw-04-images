@@ -1,145 +1,71 @@
-import React, { Component } from 'react';
-import { STATE, fetchImage } from '../services/index';
-import { SearchBar, Gallery, Loader, Button, Modal, Message } from './index';
+import React, { useState, useEffect } from 'react';
+import { Searchbar } from '../components/Searchbar/Searchbar';
+import { ToastContainer } from 'react-toastify';
+import { ImageGallery } from '../components/ImageGallery/ImageGallery';
+import { GlobalStyle } from 'components/Globalstyle.js';
+import { Layout } from './Layout.js';
+import { fetchImages } from './serviceAPI/ImagesAPI';
+import { Loader } from 'components/Loader/Loader';
+import { LoadMoreBtn } from 'components/LoadMoreBtn/LoadMoreBtn';
+import { ErrorInfo } from 'components/ImageGallery/ImageGallery.styled';
 
-export class App extends Component {
-  state = {
-    images: [],
-    query: '',
-    page: 1,
-    error: null,
-    status: STATE.INITIAL_STATE,
-    showModal: false,
-    currentIndex: null,
-  };
+export const App = () => {
+  const [searchText, setSearchText] = useState('');
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [error, setError] = useState(null);
 
-  totalHits = null;
-
-  async componentDidUpdate(_, prevState) {
-    if (prevState.query !== this.state.query) {
-      try {
-        await this.setState({ page: 1, status: STATE.LOAD });
-        const { page, query } = this.state;
-        const data = await fetchImage(query, page);
-        this.totalHits = data.totalHits;
-
-        this.setState({
-          images: this.normalizedData(data.hits),
-          status: STATE.LOADED,
-        });
-      } catch (error) {
-        this.setState({ error: error.message, status: STATE.ERROR });
-      }
-    }
-
-    if (prevState.page < this.state.page) {
-      try {
-        const { page, query } = this.state;
-        this.setState({ status: STATE.LOAD });
-        const data = await fetchImage(query, page);
-        this.setState(prevState => ({
-          images: [...prevState.images, ...this.normalizedData(data.hits)],
-          status: STATE.LOADED,
-        }));
-      } catch (error) {
-        this.setState({ error: error.message, status: STATE.ERROR });
-      }
-    }
-  }
-
-  normalizedData = data => {
-    return data.map(({ id, tags, webformatURL, largeImageURL }) => {
-      return { id, tags, webformatURL, largeImageURL };
-    });
-  };
-
-  onHandleSubmit = value => {
-    this.setState({ query: value });
-  };
-
-  onHandleClick = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
-  };
-
-  openModal = id => {
-    this.setState({
-      showModal: true,
-    });
-    document.addEventListener('keydown', this.onKeyClick);
-    const index = this.state.images.findIndex(image => image.id === id);
-    this.setState({ currentIndex: index });
-  };
-
-  onKeyClick = async e => {
-    if (e.code === 'Escape') {
-      this.setState({ showModal: false });
-    }
-    if (e.code === 'ArrowRight') {
-      this.changeIndex(1);
-    }
-    if (e.code === 'ArrowLeft') {
-      this.changeIndex(-1);
-    }
-  };
-
-  onMouseClick = e => {
-    if (e.target === e.currentTarget) {
-      this.setState({ showModal: false });
-    }
-  };
-
-  changeIndex = value => {
-    if (this.state.currentIndex + value < 0) {
-      this.setState({ currentIndex: this.state.images.length - 1 });
+  useEffect(() => {
+    if (!searchText) {
       return;
     }
-    if (this.state.currentIndex + value > this.state.images.length - 1) {
-      this.setState({
-        currentIndex: 0,
+
+    setLoading(true);
+    setError(null);
+
+    fetchImages(searchText, page)
+      .then(responseImages => {
+        if (responseImages.totalHits === 0) {
+          setError(
+            'Sorry, there are no images matching your search query. Please try again.'
+          );
+          return;
+        } else {
+          setImages(prevImages => [...prevImages, ...responseImages.hits]);
+          console.log(responseImages);
+          console.log(responseImages.totalHits);
+        }
+      })
+      .catch(error => {
+        setError(error.message);
+      })
+      .finally(() => {
+        setLoading(false);
       });
-      return;
-    }
-    this.setState(prevState => ({
-      currentIndex: prevState.currentIndex + value,
-    }));
+  }, [searchText, page]);
+
+  const onChangeQuery = searchText => {
+    setSearchText(searchText);
+    setPage(1);
+    setImages([]);
+    setError(null);
+    console.log(searchText);
   };
 
-  render() {
-    const { images, error, status, showModal } = this.state;
-    const currentImage = this.state.images[this.state.currentIndex];
+  const handleLoadMore = () => {
+    setPage(prevPage => prevPage + 1);
+  };
 
-    return (
-      <div className="App">
-        <SearchBar onSubmit={this.onHandleSubmit} status={status} />
-        {error && <Message>{`${error}. Try to reload your page!`}</Message>}
-        {!images.length && status === STATE.LOADED && (
-          <Message>
-            Nothing found. Try searching with a different parameter!
-          </Message>
-        )}
-        {!!images.length && (
-          <Gallery images={this.state.images} openModal={this.openModal} />
-        )}
-
-        {(status === STATE.INITIAL_STATE || status === STATE.LOADED) &&
-          !!images.length && (
-            <Button
-              onHandleClick={this.onHandleClick}
-              disabled={images.length >= this.totalHits}
-            />
-          )}
-        {status === STATE.LOAD && <Loader />}
-        {showModal && (
-          <Modal
-            image={currentImage}
-            onKeyClick={this.onKeyClick}
-            onMouseClick={this.onMouseClick}
-            changeIndex={this.changeIndex}
-            totalImages={this.state.images.length}
-            currentPosition={this.state.currentIndex + 1}
-          />
-        )}
-      </div>
-    );
-  }
-}
+  return (
+    <Layout>
+      <GlobalStyle />
+      <ToastContainer autoClose={3000} />
+      <Searchbar onSubmit={onChangeQuery} />
+      {error && <ErrorInfo>{error}</ErrorInfo>}
+      {images.length > 0 && <ImageGallery images={images} error={error} />}
+      {loading && <Loader />}
+      {images.length > 0 && <LoadMoreBtn onClick={handleLoadMore} />}
+    </Layout>
+  );
+};

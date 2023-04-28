@@ -1,9 +1,4 @@
-import styled from '@emotion/styled';
-
-import {
-  HiArrowLeft as BackIcon,
-  HiArrowRight as ForwardIcon,
-} from 'react-icons/hi';
+import styled from 'styled-components';
 
 export const Overlay = styled.div`
   position: fixed;
@@ -18,32 +13,27 @@ export const Overlay = styled.div`
   z-index: 1200;
 `;
 
-export const ModalCount = styled.span`
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  color: #fff;
-`;
-
-export const ModalWindow = styled.div`
-  display: flex;
-  align-items: center;
+export const Modalka = styled.div`
   max-width: calc(100vw - 48px);
   max-height: calc(100vh - 24px);
 `;
 
-export const ModalSwitch = styled.button`
-  height: 20px;
-
-  background-color: transparent;
+export const ModalCloseBtn = styled.button`
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  top: 12px;
+  right: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #81f7f3;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
   cursor: pointer;
-  border: none;
-  color: white;
-`;
-
-export const HiArrowLeft = styled(BackIcon)`
-  fill: currentColor;
-`;
-export const HiArrowRight = styled(ForwardIcon)`
-  fill: currentColor;
+  transition: color var(--transition-method);
+  :hover,
+  :focus {
+    color: blue;
+  }
 `;

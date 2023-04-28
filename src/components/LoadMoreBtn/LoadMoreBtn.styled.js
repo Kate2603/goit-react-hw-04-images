@@ -1,9 +1,9 @@
-import styled from '@emotion/styled';
+import styled from 'styled-components';
 
-export const LoadButton = styled.button`
+export const LoadMore = styled.button`
   padding: 8px 16px;
   border-radius: 2px;
-  background-color: #81F7F3;
+  background-color: #81f7f3;
   transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
   text-align: center;
   display: inline-block;
@@ -32,4 +32,9 @@ export const LoadButton = styled.button`
     color: #fff;
     cursor: not-allowed;
   }
+`;
+
+export const BtnWrapper = styled.div`
+  display: flex;
+  margin-top: 20px;
 `;
